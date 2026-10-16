@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mein Skillkoffer</title>
+<style>
+@font-face{font-family:"Fuzzy Bubbles";src:url("Fuzzy_Bubbles/FuzzyBubbles-Regular.ttf") format("truetype");font-weight:400;font-display:swap}
+@font-face{font-family:"Fuzzy Bubbles";src:url("Fuzzy_Bubbles/FuzzyBubbles-Bold.ttf") format("truetype");font-weight:700;font-display:swap}
+@font-face{font-family:"Hubballi";src:url("Hubballi/Hubballi-Regular.ttf") format("truetype");font-weight:400;font-display:swap}
+:root{
+  --cream:#bf8c90; --paper:#f7f7f0; --ink:#401607; --muted:#401607;
+  --sage:#c5e9e4; --sage-dark:#42aaa8; --terracotta:#f05228;
+  --lavender:#e5d4e9; --sand:#f8d9c8; --line:#d8dbd0;
+  --overlap:#652d86;
+  --shadow:0 8px 24px rgba(41,47,43,.08);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--cream);color:var(--ink);font-family:"Fuzzy Bubbles",ui-sans-serif,system-ui,sans-serif;line-height:1.5}
+.app{min-height:100vh;background:#a3bfbc;--ink:#401607;--muted:#401607}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+main{min-width:0;padding:36px clamp(20px,4vw,60px) 60px;max-width:1500px;width:100%;margin:0 auto}
+.topline{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:28px}
+.account-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;font-size:10px;color:var(--ink);margin-top:auto;padding-top:18px}
+.account-actions .btn{padding:6px 9px;border-radius:9px;font-size:10px}
+.account-actions #account-email{font-size:10px}
+.auth-screen{min-height:100vh;display:grid;place-items:center;padding:24px}
+.auth-card{width:min(440px,100%);padding:clamp(24px,5vw,38px);background:var(--paper);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow)}
+.auth-card h1{margin-bottom:8px}
+.auth-card>p{margin-bottom:22px}
+.auth-card .notice{font-size:12px;margin-top:18px}
+.auth-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:18px}
+.auth-status{font-size:13px;margin-top:15px;min-height:20px}
+.eyebrow{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--sage-dark);font-weight:700}
+h1{font-size:clamp(28px,3vw,42px);line-height:1.12;letter-spacing:-1.5px;font-weight:600;margin:8px 0 10px}
+h2{font-size:21px;letter-spacing:-.5px;margin:0 0 16px;font-weight:650}
+h3{font-size:16px;margin:0 0 6px}
+p{margin:0;color:var(--muted)}
+.top-actions{display:flex;gap:10px;align-items:center}
+.search{width:min(270px,28vw);background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:11px 14px;outline:none}
+.search[hidden]{display:none}
+.search-toggle{width:42px;height:42px;padding:0;display:grid;place-items:center;font-size:21px}
+.icon-button{width:42px;height:42px;padding:0;display:grid;place-items:center;font-size:21px;border-radius:50%}
+.dashboard-add{display:flex;justify-content:center;margin:8px 0 38px}
+.dashboard-add .btn{min-width:0;padding:7px 12px;border-radius:10px;font-size:12px}
+.dashboard-add .btn,.library-add .btn{background:#d6afb1;color:var(--ink);border:1px solid #d6afb1;font-weight:400;box-shadow:none}
+.dashboard-add .btn:hover,.library-add .btn:hover{background:#dfbfc1;filter:none}
+.library-add{display:flex;justify-content:center;margin:20px 0 8px}
+.library-add .btn{padding:5px 9px;font-size:11px;line-height:1.2}
+.search:focus,input:focus,select:focus,textarea:focus{border-color:#9f8bea;box-shadow:0 0 0 3px #e6dfff;outline:none}
+.btn{border:0;border-radius:13px;padding:11px 15px;background:var(--sage-dark);color:white;font-weight:600}
+.btn:hover{filter:brightness(.95)}
+.btn.secondary{background:var(--paper);border:1px solid var(--line);color:var(--ink)}
+.app .account-actions .btn,.app .top-actions .icon-button,.app .dashboard-add .btn{background:#b8cdcb;border:1px solid #b8cdcb;color:#401607}
+.app .top-actions .icon-button{width:36px;height:36px;padding:0;display:grid;place-items:center;border-radius:50%;font-size:19px;line-height:1}
+.app .account-actions .btn:hover,.app .top-actions .icon-button:hover,.app .dashboard-add .btn:hover{background:#c5d7d5;border-color:#c5d7d5;filter:none}
+.section{margin:0 0 34px}
+.section-head{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:15px}
+.section-head p{font-size:13px}
+.category-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.category{position:relative;overflow:hidden;aspect-ratio:1;background:#bf8c90;border:1px solid #bf8c90;border-radius:16px;padding:16px;min-height:0;display:flex;flex-direction:column;align-items:center;text-align:center;color:#401607;font-family:"Hubballi","Fuzzy Bubbles",sans-serif}
+.category:hover{border-color:#42aaa8;box-shadow:var(--shadow)}
+.category.tone-lilac,#page-library.tone-lilac{--category-background:#e8d9f1}
+.category.tone-turquoise,#page-library.tone-turquoise{--category-background:#d4ece8}
+.category.tone-violet,#page-library.tone-violet{--category-background:#e4dcf4}
+.category.tone-mustard,#page-library.tone-mustard{--category-background:#f0e5bd}
+.category.tone-soft-yellow,#page-library.tone-soft-yellow{--category-background:#f3edcf}
+.category.tone-deep-teal,#page-library.tone-deep-teal{--category-background:#d2e3e2}
+.category.tone-rose,#page-library.tone-rose{--category-background:#f2dce3}
+.category.tone-light-blue,#page-library.tone-light-blue{--category-background:#d9eaf1}
+.category.tone-gray,#page-library.tone-gray{--category-background:#e2e3e1}
+.category.tone-yellow-green,#page-library.tone-yellow-green{--category-background:#e7edcc}
+.category.tone-blue,#page-library.tone-blue{--category-background:#d9e3f2}
+.category[class*="tone-"]{background:#bf8c90}
+.category .cat-image{position:absolute;inset:0;background-size:cover;background-position:center 35%}
+.category h3{position:absolute;right:8px;bottom:12px;left:8px;font-size:18px;color:#401607;margin:0;text-align:center}
+.category.has-image h3{z-index:1;color:var(--category-accent);text-shadow:0 1px 3px rgba(64,22,7,.8)}
+.daily-card{display:grid;grid-template-columns:1fr;align-items:center}
+.daily-quote{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:clamp(8px,2vw,18px);width:fit-content;max-width:100%;font-size:clamp(20px,2.3vw,26px);font-weight:700;line-height:1.4;color:#401607;text-align:center;margin:0 auto}
+.daily-quote::before,.daily-quote::after{font-size:1.45em;font-weight:400;line-height:1;color:#401607}
+.daily-quote::before{content:"“"}
+.daily-quote::after{content:"”"}
+.daily-settings{display:grid;gap:9px}
+.daily-settings select{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--paper);color:var(--ink)}
+.daily-empty{font-size:14px;color:var(--muted);margin-top:8px}
+.affirmation-frequency[hidden]{display:none}
+.library-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:center;margin-bottom:17px}
+.filters{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:17px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:7px 12px;background:var(--paper);color:#625777;font-size:12px}
+.chip.active{background:var(--overlap);border-color:var(--overlap);color:white}
+#page-library{--category-background:var(--cream);--shape-color:var(--sage-dark)}
+#page-library .chip.active{background:var(--category-background);border-color:var(--shape-color);color:var(--ink)}
+#page-library .tag{background:var(--category-background);color:var(--ink)}
+#page-library .fav{color:var(--shape-color)}
+#page-library .daily-pick.selected{background:var(--category-background);color:var(--shape-color)}
+#page-library .resource-actions .btn.secondary{border-color:var(--shape-color);color:var(--shape-color)}
+#page-library .library-add .btn{background:var(--category-background);border-color:var(--shape-color)}
+#page-library .library-add .btn:hover{filter:brightness(.96)}
+.resource-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.resource{background:var(--paper);border:1px solid var(--line);border-radius:18px;overflow:hidden;min-width:0}
+.resource-cover{height:110px;background:#c5e9e4;display:grid;place-items:center;font-size:38px;position:relative;overflow:hidden}
+.resource-cover.video{background:#f8d9c8}
+.resource-cover.image{background:#e5d4e9}
+.resource-cover.text{background:#f1eee3}
+.fav{position:absolute;right:10px;top:10px;border:0;border-radius:50%;background:#f7f7f0e8;width:32px;height:32px;color:#773e64;font-size:17px}
+.daily-pick{position:absolute;right:48px;top:10px;border:0;border-radius:50%;background:#f7f7f0e8;width:32px;height:32px;color:#686c67;font-size:17px}
+.daily-pick.selected{background:#c5e9e4;color:#236d69}
+.resource-body{padding:15px}
+.resource-body p{font-size:12px;margin:5px 0 12px;min-height:18px}
+.tags{display:flex;gap:5px;flex-wrap:wrap}
+.tag{background:#e9eadd;border-radius:6px;padding:4px 7px;font-size:10px;color:#565c56}
+.resource-actions{display:flex;gap:8px;margin-top:14px}
+.resource-actions button{flex:1}
+.affirmation-list{display:grid;grid-template-columns:1fr;gap:10px}
+.resource-grid.affirmation-list{grid-template-columns:minmax(0,1fr)}
+.affirmation-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;background:rgba(247,247,240,.72);border:1px solid var(--line);border-radius:14px}
+.affirmation-row p{flex:1;color:#401607;font-size:clamp(16px,2vw,21px);font-weight:700;line-height:1.4}
+.affirmation-actions{display:flex;gap:8px;flex-shrink:0}
+.affirmation-actions button{width:38px;height:38px;border:1px solid var(--shape-color);border-radius:50%;background:var(--category-background);color:var(--shape-color);font-size:19px;line-height:1}
+.affirmation-actions button:hover{filter:brightness(.96)}
+.empty{padding:30px;border:1px dashed #d5d2c7;border-radius:18px;text-align:center;color:var(--muted);grid-column:1/-1}
+.page{display:none}.page.active{display:block}
+.topline p:empty{display:none}
+.subheading{margin:0 0 7px;color:var(--muted)}
+.notice{font-size:12px;padding:12px 14px;background:#f8d9c8;border-radius:12px;color:#604235;margin-top:18px}
+dialog{border:0;border-radius:22px;padding:0;width:min(540px,calc(100% - 28px));box-shadow:0 24px 80px #28322633;color:var(--ink);background:var(--paper)}
+dialog::backdrop{background:#26312666;backdrop-filter:blur(3px)}
+.modal{padding:25px}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.close{border:0;background:#e5d4e9;border-radius:50%;width:34px;height:34px;font-size:20px}
+.form-grid{display:grid;gap:13px}
+.field{display:grid;gap:6px}
+.field label{font-size:12px;font-weight:700;color:#565c56}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:11px;padding:11px;background:var(--paper);color:var(--ink)}
+.field textarea{min-height:75px;resize:vertical}
+.form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+footer{margin-top:40px;border-top:1px solid var(--line);padding-top:18px;font-size:12px;color:#898c81}
+@media(max-width:1050px){.need-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.resource-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:720px){main{padding:22px 16px 40px}.topline{align-items:center;flex-direction:row}.top-actions{width:auto;flex-wrap:nowrap}.search{width:min(55vw,260px);flex:1}.need-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.need{padding:14px}.resource-grid{grid-template-columns:1fr 1fr;gap:9px}.category-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.category{padding:10px 8px;min-height:0}.category h3{font-size:14px;bottom:10px}.daily-card{grid-template-columns:1fr;padding:17px}.resource-cover{height:85px}.resource-body{padding:11px}.resource-actions{flex-direction:column}.section-head{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<section class="auth-screen" id="auth-screen">
+  <div class="auth-card">
+    <div class="eyebrow">MEIN SKILLKOFFER</div>
+    <h1>Anmelden</h1>
+    <p>Melde dich mit deinem E-Mail-Konto an, um deine persönliche Sammlung zu öffnen.</p>
+    <form id="auth-form" class="form-grid">
+      <div class="field"><label for="auth-email">E-Mail</label><input id="auth-email" type="email" autocomplete="email" required></div>
+      <div class="field"><label for="auth-password">Passwort</label><input id="auth-password" type="password" autocomplete="current-password" required></div>
+      <div class="auth-actions">
+        <button class="btn" type="submit" value="signin">Anmelden</button>
+        <button class="btn secondary" type="submit" value="signup">Registrieren</button>
+      </div>
+    </form>
+    <button class="btn secondary" id="auth-signout" type="button" hidden>Abmelden</button>
+    <p class="auth-status" id="auth-status" role="status" aria-live="polite"></p>
+    <p class="notice">Ältere Einträge aus diesem Browser werden weder verändert noch automatisch in dein Konto übertragen.</p>
+  </div>
+</section>
+<div class="app" id="app-shell" hidden>
+  <main>
+    <div class="topline">
+      <div class="top-actions"><button class="btn secondary icon-button" data-go="home" aria-label="Zum Dashboard" title="Zum Dashboard">⌂</button><button class="btn secondary icon-button" data-go="favorites" aria-label="Favoriten" title="Favoriten">♡</button><button class="btn secondary icon-button search-toggle" id="search-toggle" aria-label="Suche öffnen" aria-expanded="false" aria-controls="search" title="Suche">⌕</button><input id="search" class="search" type="search" placeholder="Suchen" aria-label="Skillkoffer durchsuchen" hidden></div>
+    </div>
+    <p class="notice" id="nextcloud-test-result" role="status" aria-live="polite" hidden></p>
+
+    <section class="page active" id="page-home">
+      <section class="section" id="daily-section" hidden>
+        <p class="daily-quote" id="daily-quote" aria-live="polite"></p>
+        <p class="daily-empty" id="daily-empty"></p>
+      </section>
+
+      <section class="section">
+        <div class="category-grid" id="home-categories"></div>
+      </section>
+
+      <div class="dashboard-add"><button class="btn" id="add-top">＋ Hinzufügen</button></div>
+      <div class="account-actions"><span id="account-email"></span><button class="btn secondary" id="nextcloud-test">Nextcloud testen</button><button class="btn secondary" id="signout">Abmelden</button></div>
+    </section>
+
+    <section class="page" id="page-library">
+      <div class="section">
+        <div class="library-head"><div><h2 id="library-title">Meine Sammlung</h2><p id="library-description">Audios, Videos, Bilder und eigene Übungen</p></div></div>
+        <div class="filters" id="filters"></div>
+        <div class="field affirmation-frequency" id="affirmation-frequency-control" hidden><label for="daily-frequency">Affirmation wechseln</label><select id="daily-frequency" aria-label="Wechselhäufigkeit"><option value="daily">Täglich</option><option value="weekly">Wöchentlich</option></select></div>
+        <div class="resource-grid" id="library-items"></div>
+        <div class="library-add"><button class="btn secondary" id="add-library">＋ Inhalt hinzufügen</button></div>
+        <p class="notice" id="library-notice">Deine Einträge werden geschützt in deinem Supabase-Konto gespeichert. Mediendateien werden in deiner Nextcloud abgelegt.</p>
+      </div>
+    </section>
+
+    <section class="page" id="page-favorites">
+      <section class="section">
+        <h2>Deine Favoriten</h2><p class="subheading">Übungen, die du schnell wiederfinden möchtest.</p>
+        <div class="resource-grid" id="favorite-items"></div>
+      </section>
+    </section>
+  </main>
+</div>
+
+<dialog id="add-dialog">
+  <form id="add-form" class="modal">
+    <div class="modal-head"><div><div class="eyebrow">DEINE BIBLIOTHEK</div><h2 style="margin:5px 0 0">Etwas hinzufügen</h2></div><button type="button" class="close" id="close-dialog" aria-label="Schließen">×</button></div>
+    <div class="form-grid">
+      <div class="field"><label for="item-title">Titel *</label><input id="item-title" name="title" required maxlength="100" placeholder="z. B. Atemmeditation am Morgen"></div>
+      <div class="field"><label for="item-kind">Art des Inhalts *</label><select id="item-kind" name="kind" required><option value="audio">Audio</option><option value="video">Video</option><option value="image">Bild</option><option value="text">Text / Übung</option><option value="other">Anderes</option></select></div>
+      <div class="field"><label for="item-category">Sammlung *</label><select id="item-category" name="category" required></select></div>
+      <div class="field"><label for="item-duration">Dauer (optional)</label><input id="item-duration" name="duration" placeholder="z. B. 8 Minuten"></div>
+      <div class="field"><label for="item-description">Notiz (optional)</label><textarea id="item-description" name="description" maxlength="500" placeholder="Wann oder wobei hilft mir dieser Inhalt?"></textarea></div>
+      <div class="field"><label for="item-file">Datei auswählen (optional)</label><input id="item-file" name="file" type="file" accept="audio/*,video/*,image/*,.pdf,.txt"></div>
+      <p style="font-size:12px">Tipp: Du kannst zunächst auch nur einen Titel und eine Beschreibung speichern. Die Datei lässt sich später ergänzen, indem du einen neuen Eintrag anlegst.</p>
+    </div>
+    <div class="form-actions"><button type="button" class="btn secondary" id="cancel-add">Abbrechen</button><button class="btn" type="submit">In Sammlung speichern</button></div>
+  </form>
+</dialog>
+
+<dialog id="affirmation-dialog">
+  <form id="affirmation-form" class="modal">
+    <div class="modal-head"><div><div class="eyebrow">AFFIRMATIONEN</div><h2 style="margin:5px 0 0">Neue Affirmation</h2></div><button type="button" class="close" id="close-affirmation" aria-label="Schließen">×</button></div>
+    <div class="field"><label for="affirmation-text">Dein Text</label><textarea id="affirmation-text" required maxlength="500" placeholder="Schreibe deine Affirmation …"></textarea></div>
+    <div class="form-actions"><button type="button" class="btn secondary" id="cancel-affirmation">Abbrechen</button><button class="btn" type="submit">Speichern</button></div>
+  </form>
+</dialog>
+
+<dialog id="detail-dialog"><div class="modal"><div class="modal-head"><div><div class="eyebrow">DEIN INHALT</div><h2 id="detail-title" style="margin:5px 0 0">Inhalt</h2></div><button class="close" id="close-detail" aria-label="Schließen">×</button></div><div id="detail-content"></div></div></dialog>
+
+<script>
+const categories = [
+  {name:"Tanzen",tone:"lilac",image:"buttons/tanzen.PNG",accent:"#a668d8",surface:"#f0e4f7"},
+  {name:"Meditationen",tone:"turquoise",image:"buttons/meditation.PNG",accent:"#ffd52b",surface:"#fff6cf"},
+  {name:"Qi Gong",tone:"violet",image:"buttons/qi gong.PNG",accent:"#ffd52b",surface:"#fff6cf"},
+  {name:"Yoga",tone:"mustard",image:"buttons/yoga.PNG",accent:"#a66bdd",surface:"#f0e4f7"},
+  {name:"Sonstiges",tone:"soft-yellow",image:"buttons/berührung(1).jpg",accent:"#ffd52b",surface:"#fff6cf"},
+  {name:"Soundscape",tone:"deep-teal",image:"buttons/soundscape.PNG",accent:"#77e5ee",surface:"#dff7f8"},
+  {name:"Interaktives",tone:"rose",accent:"#d47491"},
+  {name:"Affirmationen",tone:"light-blue",image:"buttons/affirmationen.PNG",accent:"#77e5ee",surface:"#dff7f8"},
+  {name:"Videos",tone:"gray",image:"buttons/videos.PNG",accent:"#f16a50",surface:"#fde6df"},
+  {name:"Berührung",tone:"yellow-green",accent:"#a2b947"},
+  {name:"Bilder",tone:"blue",image:"buttons/bilder.PNG",accent:"#f27356",surface:"#fde6df"}
+];
+const DB_NAME="skillkoffer-db", STORE="items", SETTINGS="settings";
+let db=null, items=[], activeFilter="Alle", affirmationTimer=null, currentUser=null, authGeneration=0, activeFileURL=null, affirmationSetting={itemId:"",frequency:"daily",startedAt:Date.now()};
+const $=id=>document.getElementById(id);
+const escapeHTML=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const SUPABASE_URL="https://rkcbttbijzsauolvqnfr.supabase.co/rest/v1/";
+const SUPABASE_PUBLISHABLE_KEY="sb_publishable_x0EcqGJfRPvkZxAswR21BQ_qsOEgTEQ";
+const supabaseClient=window.supabase.createClient(
+  SUPABASE_URL.replace(/\/rest\/v1\/?$/,""),
+  SUPABASE_PUBLISHABLE_KEY
+);
+function requireUser(){
+  if(!currentUser)throw new Error("Bitte melde dich an, um deine Sammlung zu verwenden.");
+  return currentUser;
+}
+function openDB(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(DB_NAME,2);
+    req.onupgradeneeded=()=>{const d=req.result;if(!d.objectStoreNames.contains(STORE)){const st=d.createObjectStore(STORE,{keyPath:"id",autoIncrement:true});st.createIndex("createdAt","createdAt");}if(!d.objectStoreNames.contains(SETTINGS))d.createObjectStore(SETTINGS,{keyPath:"key"});};
+    req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+  });
+}
+function localMediaKey(userId,itemId){return `local-media:${userId}:${itemId}`;}
+function getLocalMedia(userId,itemId){
+  const key=localMediaKey(userId,itemId);
+  return new Promise((resolve,reject)=>{const req=db.transaction(SETTINGS,"readonly").objectStore(SETTINGS).get(key);req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error);});
+}
+function saveLocalMedia(userId,itemId,file,fileName){
+  const key=localMediaKey(userId,itemId);
+  return new Promise((resolve,reject)=>{const req=db.transaction(SETTINGS,"readwrite").objectStore(SETTINGS).put({key,file,fileName});req.onsuccess=resolve;req.onerror=()=>reject(req.error);});
+}
+function removeLocalMedia(userId,itemId){
+  const key=localMediaKey(userId,itemId);
+  return new Promise((resolve,reject)=>{const req=db.transaction(SETTINGS,"readwrite").objectStore(SETTINGS).delete(key);req.onsuccess=resolve;req.onerror=()=>reject(req.error);});
+}
+function parseCreatedAt(value){
+  if(typeof value==="number"||/^\d+$/.test(String(value??"")))return Number(value)||Date.now();
+  const timestamp=Date.parse(value);
+  return Number.isFinite(timestamp)?timestamp:Date.now();
+}
+
+function mapRemoteItem(row, localMedia = null) {
+  return {
+    id: String(row.id),
+    title: row.title,
+    kind: row.kind,
+    category: row.category==="Bewegung"?"Sonstiges":row.category,
+    needs: row.needs || "",
+    duration: row.duration || "",
+    description: row.description || "",
+    favorite: Boolean(row.favorite),
+    createdAt: parseCreatedAt(row.created_at),
+    file: localMedia?.file || null,
+    fileName: localMedia?.fileName || "",
+    storage_path: row.storage_path || "",
+    nextcloud_path: row.nextcloud_path || "",
+    media_url: row.media_url || "",
+    mime_type: row.mime_type || ""
+  };
+}
+async function getAll(){
+  const user=requireUser();
+  const {data,error}=await supabaseClient.from("items").select("*").eq("user_id",user.id);
+  if(error)throw error;
+  return Promise.all((data||[]).map(async row=>mapRemoteItem(row,await getLocalMedia(user.id,String(row.id)))));
+}
+async function putItem(item){
+  const user=requireUser();
+  const values={
+    user_id:user.id,title:item.title,kind:item.kind,category:item.category,needs:item.needs||"",
+    duration:item.duration||"",description:item.description||"",favorite:Boolean(item.favorite)
+  };
+  const result=item.id
+    ?await supabaseClient.from("items").update(values).eq("id",String(item.id)).eq("user_id",user.id).select("*").single()
+    :await supabaseClient.from("items").insert(values).select("*").single();
+  if(result.error)throw result.error;
+  const saved=mapRemoteItem(result.data);
+  if(item.file&&!item.id){
+    try{
+      await saveLocalMedia(user.id,saved.id,item.file,item.fileName||item.file.name||"");
+      saved.file=item.file;saved.fileName=item.fileName||item.file.name||"";
+    }catch(error){
+      saved.mediaSaveError=error;
+      console.error("Der Eintrag wurde gespeichert, aber die lokale Datei konnte nicht abgelegt werden.",error);
+    }
+  }else if(item.id){
+    const localMedia=await getLocalMedia(user.id,saved.id);
+    saved.file=localMedia?.file||null;saved.fileName=localMedia?.fileName||"";
+  }
+  return saved;
+}
+async function deleteItem(id){
+  const user=requireUser();
+  const {data,error}=await supabaseClient.from("items").delete().eq("id",String(id)).eq("user_id",user.id).select("id");
+  if(error)throw error;
+  if(!data?.length)throw new Error("Der Eintrag wurde nicht gefunden oder gehört nicht zu deinem Konto.");
+  await removeLocalMedia(user.id,String(id));
+}
+function getAffirmationSetting(){
+  const key=`affirmation:${requireUser().id}`;
+  return new Promise((resolve,reject)=>{const req=db.transaction(SETTINGS,"readonly").objectStore(SETTINGS).get(key);req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error);});
+}
+function saveAffirmationSetting(){
+  const key=`affirmation:${requireUser().id}`;
+  return new Promise((resolve,reject)=>{const req=db.transaction(SETTINGS,"readwrite").objectStore(SETTINGS).put({key,...affirmationSetting});req.onsuccess=resolve;req.onerror=()=>reject(req.error);});
+}
+function categoryOptions(){
+  $("item-category").innerHTML=categories.map(c=>`<option>${escapeHTML(c.name)}</option>`).join("");
+}
+function renderCategories(){
+  const hiddenCategories=new Set(["Interaktives","Berührung"]);
+  const categoryOrder=["Meditationen","Yoga","Affirmationen","Tanzen","Bilder","Qi Gong","Sonstiges","Soundscape","Videos"];
+  $("home-categories").innerHTML=categoryOrder.map(name=>categories.find(c=>c.name===name)).filter(c=>c&&!hiddenCategories.has(c.name)).map(c=>{const image=c.image?`<span class="cat-image" aria-hidden="true" style="background-image:linear-gradient(180deg,transparent 45%,rgba(40,42,41,.72)),url('${escapeHTML(c.image)}')"></span>`:"";return `<button class="category tone-${c.tone}${c.image?" has-image":""}" data-category="${escapeHTML(c.name)}"${c.accent?` style="--category-accent:${escapeHTML(c.accent)}"`:""}>${image}<h3>${escapeHTML(c.name)}</h3></button>`;}).join("");
+}
+function renderDailyAffirmation(){
+  if(affirmationTimer)clearTimeout(affirmationTimer);
+  const affirmations=items.filter(i=>i.category==="Affirmationen").sort((a,b)=>a.createdAt-b.createdAt);
+  $("daily-frequency").value=affirmationSetting.frequency;
+  const startIndex=affirmations.findIndex(i=>String(i.id)===String(affirmationSetting.itemId));
+  if(startIndex<0||affirmations.length===0){
+    $("daily-quote").textContent="";
+    $("daily-section").hidden=true;
+    return;
+  }
+  const interval=affirmationSetting.frequency==="weekly"?7*24*60*60*1000:24*60*60*1000;
+  const elapsed=Math.max(0,Date.now()-affirmationSetting.startedAt);
+  const steps=Math.floor(elapsed/interval);
+  const current=affirmations[(startIndex+steps)%affirmations.length];
+  $("daily-quote").textContent=current.title;
+  $("daily-empty").textContent="";
+  $("daily-section").hidden=false;
+  affirmationTimer=setTimeout(renderDailyAffirmation,interval-(elapsed%interval)+50);
+}
+function itemMatches(i,query){
+  const hay=[i.title,i.description,i.category,i.kind,i.needs].join(" ").toLowerCase();
+  return hay.includes(query.toLowerCase());
+}
+function resourceCard(i){
+  const category=categories.find(c=>c.name===i.category);
+  const coverColor=category?.accent?` style="background-color:${escapeHTML(category.accent)}"`:"";
+  return `<article class="resource">
+    <div class="resource-cover"${coverColor}><button class="fav" data-fav="${i.id}" title="${i.favorite?"Favorit entfernen":"Als Favorit markieren"}" aria-label="${i.favorite?"Favorit entfernen":"Als Favorit markieren"}">${i.favorite?"♥":"♡"}</button></div>
+    <div class="resource-body"><h3>${escapeHTML(i.title)}</h3><p>${escapeHTML(i.description||"")}${i.duration?" · "+escapeHTML(i.duration):""}</p>
+    <div class="tags">${i.needs?`<span class="tag">${escapeHTML(i.needs)}</span>`:""}${i.fileName?`<span class="tag">Datei vorhanden</span>`:""}</div>
+    <div class="resource-actions"><button class="btn secondary" data-open="${i.id}">${i.kind==="video"?"Abspielen":"Öffnen"}</button></div></div></article>`;
+}
+function affirmationRow(i){
+  const selected=String(affirmationSetting.itemId)===String(i.id);
+  return `<article class="affirmation-row">
+    <p>${escapeHTML(i.title)}</p>
+    <div class="affirmation-actions">
+      <button type="button" data-fav="${i.id}" title="${i.favorite?"Favorit entfernen":"Als Favorit markieren"}" aria-label="${i.favorite?"Favorit entfernen":"Als Favorit markieren"}">${i.favorite?"♥":"♡"}</button>
+      <button type="button" data-daily="${i.id}" title="Auf dem Dashboard anzeigen" aria-label="${selected?"Auf dem Dashboard ausgewählt":"Auf dem Dashboard anzeigen"}">${selected?"☀":"☼"}</button>
+    </div>
+  </article>`;
+}
+function emptyMessage(message){return `<div class="empty"><div style="font-size:26px;margin-bottom:8px">☘</div>${escapeHTML(message)}</div>`;}
+function renderItems(){
+  if(!currentUser)items=[];
+  const activeCategory=categories.find(c=>c.name===activeFilter);
+  $("page-library").classList.remove(...categories.map(c=>`tone-${c.tone}`));
+  if(activeCategory){
+    $("page-library").classList.add(`tone-${activeCategory.tone}`);
+    $("page-library").style.setProperty("--shape-color",activeCategory.accent||"var(--sage-dark)");
+    $("page-library").style.setProperty("--category-background",activeCategory.surface||"#bf8c90");
+  }else{
+    $("page-library").style.removeProperty("--shape-color");
+    $("page-library").style.removeProperty("--category-background");
+  }
+  $("library-title").textContent=activeCategory?.name||"Meine Sammlung";
+  $("library-description").hidden=Boolean(activeCategory);
+  $("library-notice").hidden=Boolean(activeCategory);
+  const query=$("search").value.trim();
+  let filtered=items.filter(i=>itemMatches(i,query));
+  if(activeFilter!=="Alle")filtered=filtered.filter(i=>i.category===activeFilter||i.kind===activeFilter);
+  const sorted=filtered.sort((a,b)=>b.createdAt-a.createdAt);
+  $("library-items").classList.toggle("affirmation-list",activeFilter==="Affirmationen");
+  $("library-items").innerHTML=sorted.length
+    ?sorted.map(activeFilter==="Affirmationen"?affirmationRow:resourceCard).join("")
+    :activeCategory?"":emptyMessage(query||activeFilter!=="Alle"?"Keine passenden Inhalte gefunden.":"Hier ist noch Platz für deine ersten Inhalte. Füge eine Meditation, ein Audio oder eine Übung hinzu.");
+  const favs=items.filter(i=>i.favorite&&itemMatches(i,query));
+  $("favorite-items").innerHTML=favs.length?favs.map(resourceCard).join(""):emptyMessage("Du hast noch keine Favoriten markiert. Tippe auf das Herz bei einem Inhalt.");
+  const itemCategories=items.map(i=>i.category).filter(Boolean);
+  $("filters").innerHTML=["Alle",...new Set([...categories.map(c=>c.name),...itemCategories]),"audio","video","image","text"].map(f=>`<button class="chip ${activeFilter===f?"active":""}" data-filter="${escapeHTML(f)}">${({audio:"Audio",video:"Video",image:"Bilder",text:"Texte"}[f]||escapeHTML(f))}</button>`).join("");
+  $("filters").hidden=Boolean(activeCategory);
+  $("affirmation-frequency-control").hidden=true;
+  $("add-library").textContent=activeFilter==="Affirmationen"?"＋ Affirmation hinzufügen":"＋ Inhalt hinzufügen";
+  renderCategories();renderDailyAffirmation();
+}
+function showPage(page){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  $("page-"+page).classList.add("active");
+  document.querySelectorAll("[data-page]").forEach(b=>b.classList.toggle("active",b.dataset.page===page));
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function openAdd(category=""){
+  if(!currentUser)return;
+  $("add-form").reset();
+  if(categories.some(c=>c.name===category))$("item-category").value=category;
+  if(category==="Affirmationen")$("item-kind").value="text";
+  $("add-dialog").showModal();
+}
+function openAffirmation(){ if(!currentUser)return;$("affirmation-form").reset();$("affirmation-dialog").showModal(); }
+function releaseActiveFileURL(){
+  if(activeFileURL){URL.revokeObjectURL(activeFileURL);activeFileURL=null;}
+}
+async function getActionErrorMessage(error){
+  if(error?.context&&typeof error.context.clone==="function"){
+    try{
+      const response=error.context.clone();
+      const body=await response.json();
+      if(body.message||body.error)return body.message||body.error;
+    }catch(parseError){
+      console.warn("Fehlerdetails der Aktion konnten nicht gelesen werden.",parseError);
+    }
+  }
+  return error?.message||"Bitte prüfe deine Anmeldung und Verbindung.";
+}
+async function toggleFavorite(id){
+  if(!currentUser)return;
+  const item=items.find(i=>String(i.id)===String(id));if(!item)return;
+  const previous=item.favorite;
+  item.favorite=!item.favorite;
+  try{await putItem(item);}catch(error){item.favorite=previous;throw error;}
+  await refresh();
+}
+async function openItem(id) {
+  if (!currentUser) return;
+
+  const i = items.find(x => String(x.id) === String(id));
+  if (!i) return;
+
+  $("detail-title").textContent = i.title;
+  releaseActiveFileURL();
+
+  const fileURL = i.file ? URL.createObjectURL(i.file) : null;
+  activeFileURL = fileURL;
+
+  let mediaURL = fileURL;
+  const storagePath = i.storage_path || i.nextcloud_path;
+  const mimeType = i.mime_type || (
+    i.kind === "video" ? "video/mp4" :
+    i.kind === "audio" ? "audio/mpeg" :
+    i.kind === "image" ? "image/*" :
+    "application/octet-stream"
+  );
+
+  if (!mediaURL && storagePath) {
+    try {
+      const { data: result, error: functionError } =
+        await supabaseClient.functions.invoke(
+          "skillkoffer-nextcloud",
+          {
+            body: { itemId: i.id },
+            headers: {
+              "x-skillkoffer-operation": "media-ticket"
+            }
+          }
+        );
+
+      if (functionError) {
+        throw functionError;
+      }
+
+      if (!result || !result.url) {
+        throw new Error(
+          result?.error || "Der Wiedergabelink wurde nicht zurückgegeben."
+        );
+      }
+
+      mediaURL = result.url;
+    } catch (error) {
+      console.error("Nextcloud-Wiedergabelink konnte nicht geladen werden.", error);
+      throw error;
+    }
+  }
+
+  let media = "";
+
+  if (mediaURL && i.kind === "audio") {
+    media = `<audio controls style="width:100%" src="${escapeHTML(mediaURL)}"></audio>`;
+  } else if (mediaURL && i.kind === "video") {
+    media = `<video id="detail-video" controls playsinline preload="metadata"
+      style="width:100%;max-height:300px;border-radius:12px">
+      <source src="${escapeHTML(mediaURL)}" type="${escapeHTML(mimeType)}">
+    </video>
+    <p class="notice">Falls das Video nicht startet:
+      <a href="${escapeHTML(mediaURL)}" target="_blank" rel="noopener">Video separat öffnen</a>
+    </p>
+    <p id="video-error" class="notice" hidden>
+      <span id="video-error-text"></span>
+    </p>`;
+  } else if (mediaURL && i.kind === "image") {
+    media = `<img alt="${escapeHTML(i.title)}"
+      src="${escapeHTML(mediaURL)}"
+      style="width:100%;max-height:320px;object-fit:contain;border-radius:12px">`;
+  } else if (fileURL && i.file.type === "application/pdf") {
+    media = `<p>PDF-Datei gespeichert: ${escapeHTML(i.fileName)}.
+      <a href="${escapeHTML(fileURL)}" target="_blank" rel="noopener">PDF öffnen</a>
+    </p>`;
+  } else if (fileURL && i.file.type.startsWith("text/")) {
+    media = `<p><a href="${escapeHTML(fileURL)}" target="_blank" rel="noopener">Textdatei öffnen</a></p>`;
+  } else if (!mediaURL) {
+    media = `<p class="notice">Für diesen Eintrag wurde keine abspielbare Datei gefunden.</p>`;
+  }
+
+  $("detail-content").innerHTML = `
+    ${media}
+    <p style="margin:14px 0">${escapeHTML(
+      i.description || "Für diesen Inhalt hast du noch keine Notiz hinterlegt."
+    )}</p>
+    <div class="tags">
+      ${i.needs ? `<span class="tag">${escapeHTML(i.needs)}</span>` : ""}
+      ${i.duration ? `<span class="tag">${escapeHTML(i.duration)}</span>` : ""}
+    </div>
+    <div class="form-actions">
+      <button class="btn secondary" id="delete-item">Eintrag löschen</button>
+      <button class="btn" id="done-detail">Schließen</button>
+    </div>`;
+
+  $("detail-dialog").showModal();
+
+  const video = $("detail-video");
+  if (video) {
+    video.addEventListener("error", () => {
+      const errorBox = $("video-error");
+      if (errorBox) {
+        $("video-error-text").textContent =
+          "Das Video konnte nicht geladen werden. Prüfe die Verbindung und das Videoformat.";
+        errorBox.hidden = false;
+      }
+    });
+
+    video.load();
+  }
+
+  $("done-detail").onclick = () => $("detail-dialog").close();
+
+  $("delete-item").onclick = async () => {
+    if (!confirm("Diesen Inhalt wirklich aus deinem Skillkoffer löschen?")) return;
+
+    try {
+      await deleteItem(i.id);
+      $("detail-dialog").close();
+      await refresh();
+    } catch (err) {
+      alert("Der Eintrag konnte nicht gelöscht werden. Prüfe deine Anmeldung und Verbindung.");
+      console.error(err);
+    }
+  };
+}
+async function refresh(){items=await getAll();renderItems();}
+document.addEventListener("click",async e=>{
+  try{
+    const nav=e.target.closest("[data-page]");if(nav){showPage(nav.dataset.page);return;}
+    const go=e.target.closest("[data-go]");if(go){showPage(go.dataset.go);return;}
+    const cat=e.target.closest("[data-category]");if(cat){activeFilter=cat.dataset.category;showPage("library");renderItems();return;}
+    const filter=e.target.closest("[data-filter]");if(filter){activeFilter=filter.dataset.filter;renderItems();return;}
+    const daily=e.target.closest("[data-daily]");if(daily){
+      affirmationSetting.itemId=daily.dataset.daily;affirmationSetting.startedAt=Date.now();
+      await saveAffirmationSetting();await refresh();return;
+    }
+    const fav=e.target.closest("[data-fav]");if(fav){await toggleFavorite(fav.dataset.fav);return;}
+    const open=e.target.closest("[data-open]");if(open){await openItem(open.dataset.open);return;}
+  }catch(err){
+    const message=await getActionErrorMessage(err);
+    alert(`Die Aktion konnte nicht gespeichert oder ausgeführt werden.\n\nFehler: ${message}`);
+    console.error(err);
+  }
+});
+$("add-top").onclick=()=>openAdd();$("add-library").onclick=()=>activeFilter==="Affirmationen"?openAffirmation():openAdd(activeFilter==="Alle"?"":activeFilter);
+$("search-toggle").onclick=()=>{
+  const search=$("search");
+  search.hidden=!search.hidden;
+  $("search-toggle").setAttribute("aria-expanded",String(!search.hidden));
+  $("search-toggle").setAttribute("aria-label",search.hidden?"Suche öffnen":"Suche schließen");
+  if(!search.hidden)search.focus();
+};
+$("daily-frequency").addEventListener("change",async()=>{affirmationSetting.frequency=$("daily-frequency").value;affirmationSetting.startedAt=Date.now();try{await saveAffirmationSetting();renderDailyAffirmation();}catch(err){alert("Der Wechselrhythmus konnte nicht gespeichert werden.");console.error(err);}});
+$("affirmation-form").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const text=$("affirmation-text").value.trim();
+  if(!text)return;
+  try{
+    await putItem({title:text,kind:"text",category:"Affirmationen",needs:"",duration:"",description:"",file:null,fileName:"",favorite:false,createdAt:Date.now()});
+    $("affirmation-dialog").close();
+    await refresh();
+  }catch(err){alert("Die Affirmation konnte nicht gespeichert werden.");console.error(err);}
+});
+$("close-affirmation").onclick=()=>$("affirmation-dialog").close();
+$("cancel-affirmation").onclick=()=>$("affirmation-dialog").close();
+$("close-dialog").onclick=()=>$("add-dialog").close();$("cancel-add").onclick=()=>$("add-dialog").close();
+$("close-detail").onclick=()=>$("detail-dialog").close();
+$("detail-dialog").addEventListener("close",releaseActiveFileURL);
+$("search").addEventListener("input",()=>{renderItems();if(!$("page-library").classList.contains("active")&&!$("page-favorites").classList.contains("active")){showPage("library");}});
+async function uploadFileToNextcloud(itemId, file) {
+  const MAX_SIZE = 350 * 1024 * 1024;
+
+  if (file.size < 1 || file.size > MAX_SIZE) {
+    throw new Error("Die Datei muss größer als 0 und höchstens 350 MiB groß sein.");
+  }
+
+  const { data: sessionData, error: sessionError } =
+    await supabaseClient.auth.getSession();
+
+  if (sessionError) throw sessionError;
+
+  const session = sessionData?.session;
+  if (!session?.access_token) {
+    throw new Error("Bitte melde dich erneut an.");
+  }
+const { data: init, error: initError } =
+    await supabaseClient.functions.invoke("skillkoffer-nextcloud", {
+      body: {
+        operation: "upload-init",
+itemId: String(itemId).trim(),
+        fileSize: file.size,
+        fileName: file.name,
+        mimeType: file.type || "application/octet-stream"
+      }
+    });
+if (initError) {
+  console.error("Upload-Initialisierung:", initError);
+  if (initError.context) {
+    const responseText = await initError.context.clone().text().catch(() => "");
+    console.error("Server-Antwort:", responseText);
+  }
+  throw initError;
+}
+  if (!init?.ok || !init.ticket || !init.chunkSize) {
+    throw new Error(init?.error || "Der Upload konnte nicht vorbereitet werden.");
+  }
+
+  const chunkSize = Number(init.chunkSize);
+  if (!Number.isSafeInteger(chunkSize) || chunkSize < 1) {
+    throw new Error("Der Server hat eine ungültige Abschnittsgröße zurückgegeben.");
+  }
+
+  const endpoint =
+    "https://rkcbttbijzsauolvqnfr.supabase.co/functions/v1/skillkoffer-nextcloud";
+
+  const totalChunks = Math.ceil(file.size / chunkSize);
+
+  for (let number = 1; number <= totalChunks; number++) {
+    const start = (number - 1) * chunkSize;
+    const end = Math.min(start + chunkSize, file.size);
+    const chunk = file.slice(start, end);
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${session.access_token}`,
+        "apikey": supabaseClient.supabaseKey,
+        "Content-Type": "application/octet-stream",
+        "x-skillkoffer-operation": "upload-chunk",
+        "x-skillkoffer-ticket": init.ticket,
+        "x-chunk-number": String(number)
+      },
+      body: chunk
+    });
+
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok || !result.ok) {
+      throw new Error(
+        result.error ||
+        `Upload-Abschnitt ${number} von ${totalChunks} fehlgeschlagen.`
+      );
+    }
+  }
+
+  const { data: finish, error: finishError } =
+    await supabaseClient.functions.invoke("skillkoffer-nextcloud", {
+      body: {
+        operation: "upload-finish",
+        ticket: init.ticket
+      }
+    });
+
+if (finishError) {
+  console.error("Upload-Abschluss:", finishError);
+  if (finishError.context) {
+    const responseText = await finishError.context.clone().text().catch(() => "");
+    console.error("Server-Antwort:", responseText);
+  }
+  throw finishError;
+}
+  if (!finish?.ok) {
+    throw new Error(finish?.error || "Der Upload konnte nicht abgeschlossen werden.");
+  }
+
+  return finish;
+}
+$("add-form").addEventListener("submit", async e => {
+  e.preventDefault();
+
+  const file = $("item-file").files[0] || null;
+  const submitButton = $("add-form").querySelector('button[type="submit"]');
+
+  const item = {
+    title: $("item-title").value.trim(),
+    kind: $("item-kind").value,
+    category: $("item-category").value,
+    needs: "",
+    duration: $("item-duration").value.trim(),
+    description: $("item-description").value.trim(),
+    file: null,
+    fileName: "",
+    favorite: false,
+    createdAt: Date.now()
+  };
+
+  submitButton.disabled = true;
+  submitButton.textContent = file ? "Wird gespeichert und hochgeladen …" : "Wird gespeichert …";
+
+  let saved = null;
+
+  try {
+    saved = await putItem(item);
+
+    if (file) {
+      await uploadFileToNextcloud(saved.id, file);
+    }
+
+    $("add-dialog").close();
+    $("add-form").reset();
+    await refresh();
+    showPage("library");
+
+    alert(file
+      ? "Eintrag und Datei wurden erfolgreich gespeichert."
+      : "Eintrag wurde erfolgreich gespeichert."
+    );
+  } catch (err) {
+    console.error("Speichern oder Nextcloud-Upload fehlgeschlagen:", err);
+
+    if (saved) {
+      await refresh().catch(console.error);
+
+      alert(
+        "Der Eintrag wurde in Supabase gespeichert, aber der Datei-Upload " +
+        "war nicht erfolgreich.\n\nFehler: " +
+        (err.message || "Unbekannter Fehler") +
+        "\n\nDer Eintrag bleibt erhalten. Bitte prüfe die Verbindung, bevor du " +
+        "einen weiteren Upload startest."
+      );
+    } else {
+      alert(
+        "Der Eintrag konnte nicht gespeichert werden.\n\n" +
+        (err.message || "Bitte prüfe deine Anmeldung und Verbindung.")
+      );
+    }
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = "In Sammlung speichern";
+  }
+});
+async function handleAuthSession(session){
+  const generation=++authGeneration;
+  const user=session?.user||null;
+  currentUser=user;
+  items=[];
+  activeFilter="Alle";
+  $("search").value="";
+  document.querySelectorAll("dialog[open]").forEach(dialog=>dialog.close());
+  releaseActiveFileURL();
+  $("detail-title").textContent="Inhalt";
+  $("detail-content").replaceChildren();
+  showPage("home");
+  $("app-shell").hidden=true;
+  $("account-email").textContent="";
+  if(affirmationTimer)clearTimeout(affirmationTimer);
+  affirmationSetting={itemId:"",frequency:"daily",startedAt:Date.now()};
+  renderItems();
+  if(!user){
+    $("auth-screen").hidden=false;
+    $("auth-signout").hidden=true;
+    $("auth-status").textContent="Bitte melde dich an, um deine Sammlung zu öffnen.";
+    return;
+  }
+  $("auth-screen").hidden=false;
+  $("auth-signout").hidden=false;
+  $("auth-status").textContent="Deine Sammlung wird geladen …";
+  $("account-email").textContent=user.email||"";
+  try{
+    const saved=await getAffirmationSetting();
+    if(generation!==authGeneration)return;
+    if(saved)affirmationSetting={itemId:saved.itemId||"",frequency:saved.frequency==="weekly"?"weekly":"daily",startedAt:saved.startedAt||Date.now()};
+    await refresh();
+    if(generation!==authGeneration)return;
+    $("auth-screen").hidden=true;
+    $("app-shell").hidden=false;
+  }catch(err){
+    if(generation!==authGeneration)return;
+    $("auth-status").textContent="Dein Konto ist angemeldet, aber die Sammlung konnte nicht geladen werden. Prüfe die Tabellenstruktur und Row-Level-Security-Regeln.";
+    console.error("Supabase-Sammlung konnte nicht geladen werden.",err);
+  }
+}
+$("auth-form").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const email=$("auth-email").value.trim();
+  const password=$("auth-password").value;
+  const action=e.submitter?.value||"signin";
+  $("auth-status").textContent=action==="signup"?"Dein Konto wird erstellt …":"Du wirst angemeldet …";
+  try{
+    const result=action==="signup"
+      ?await supabaseClient.auth.signUp({email,password})
+      :await supabaseClient.auth.signInWithPassword({email,password});
+    if(result.error)throw result.error;
+    if(action==="signup"&&!result.data.session)$("auth-status").textContent="Registrierung erfolgreich. Bestätige deine E-Mail-Adresse über den zugesandten Link und melde dich danach an.";
+  }catch(err){
+    $("auth-status").textContent=err.message||"Die Anmeldung ist fehlgeschlagen.";
+    console.error("Supabase-Anmeldung fehlgeschlagen.",err);
+  }
+});
+async function signOut(){
+  try{
+    const {error}=await supabaseClient.auth.signOut();
+    if(error)throw error;
+  }catch(err){alert("Du konntest nicht abgemeldet werden. Prüfe deine Verbindung und versuche es erneut.");console.error(err);}
+}
+$("signout").onclick=signOut;
+$("auth-signout").onclick=signOut;
+$("nextcloud-test").onclick=async()=>{
+  const button=$("nextcloud-test");
+  const result=$("nextcloud-test-result");
+  button.disabled=true;
+  result.hidden=false;
+  result.textContent="Nextcloud-Verbindung wird getestet …";
+  try{
+    const {data,error}=await supabaseClient.functions.invoke("skillkoffer-nextcloud",{body:{}});
+    if(error){
+      let detail=error.message||"Unbekannter Fehler";
+      if(error.context&&typeof error.context.clone==="function"){
+        try{
+          const response=error.context.clone();
+          const body=await response.json();
+          detail=body.message||body.error||JSON.stringify(body);
+          if(response.status===401)detail+=" Bitte melde dich erneut an und prüfe, ob die Edge Function den Supabase-Anmeldetoken akzeptiert.";
+        }catch(parseError){
+          console.warn("Fehlerdetails der Edge Function konnten nicht gelesen werden.",parseError);
+        }
+      }
+      throw new Error(detail);
+    }
+    result.textContent=`Verbindungstest erfolgreich. Antwort: ${typeof data==="string"?data:JSON.stringify(data)}`;
+  }catch(error){
+    result.textContent=`Verbindungstest fehlgeschlagen: ${error.message||"Die Edge Function ist nicht erreichbar."}`;
+    console.error("Nextcloud-Verbindungstest fehlgeschlagen.",error);
+  }finally{
+    button.disabled=false;
+  }
+};
+let authReady=false;
+supabaseClient.auth.onAuthStateChange((event,session)=>{
+  if(event==="INITIAL_SESSION")return;
+  if(authReady&&(event==="SIGNED_IN"||event==="SIGNED_OUT"||event==="USER_UPDATED"))void handleAuthSession(session).catch(err=>console.error("Anmeldestatus konnte nicht verarbeitet werden.",err));
+});
+(async function init(){
+  categoryOptions();
+  try{
+    db=await openDB();
+    const {data,error}=await supabaseClient.auth.getSession();
+    if(error)throw error;
+    authReady=true;
+    await handleAuthSession(data.session);
+  }catch(err){
+    $("auth-status").textContent="Die App konnte nicht initialisiert werden. Prüfe deine Browser-Speicherung und Verbindung.";
+    console.error("Skillkoffer konnte nicht initialisiert werden.",err);
+  }
+})();
+</script>
+</body>
+</html>
