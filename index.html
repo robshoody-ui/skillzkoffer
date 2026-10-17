@@ -119,9 +119,17 @@ p{margin:0;color:var(--muted)}
 .resource-grid.affirmation-list{grid-template-columns:minmax(0,1fr)}
 .affirmation-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;background:rgba(247,247,240,.72);border:1px solid var(--line);border-radius:14px}
 .affirmation-row p{flex:1;color:#401607;font-size:clamp(16px,2vw,21px);font-weight:700;line-height:1.4}
+.affirmation-row{position:relative;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:42px 16px 14px;background:rgba(247,247,240,.72);border:1px solid var(--line);border-radius:14px}
+.affirmation-delete{position:absolute;top:7px;left:8px;width:30px;height:30px;border:1px solid var(--shape-color);border-radius:50%;background:var(--category-background);color:var(--shape-color);font-size:15px;line-height:1}
+.affirmation-delete:hover{filter:brightness(.96)}
 .affirmation-actions{display:flex;gap:8px;flex-shrink:0}
 .affirmation-actions button{width:38px;height:38px;border:1px solid var(--shape-color);border-radius:50%;background:var(--category-background);color:var(--shape-color);font-size:19px;line-height:1}
 .affirmation-actions button:hover{filter:brightness(.96)}
+.photo-preview-wrap{position:relative;height:220px;background:#e9eadd}
+.photo-preview{display:block;width:100%;height:100%;object-fit:cover}
+.photo-delete{position:absolute;top:10px;left:10px;width:32px;height:32px;border:0;border-radius:50%;background:#f7f7f0e8;color:#773e64;font-size:16px}
+.photo-delete:hover{filter:brightness(.96)}
+.photo-preview-error{position:absolute;right:8px;bottom:8px;left:8px;padding:6px 8px;border-radius:8px;background:#f7f7f0e8;color:#401607;font-size:11px;text-align:center}
 .empty{padding:30px;border:1px dashed #d5d2c7;border-radius:18px;text-align:center;color:var(--muted);grid-column:1/-1}
 .page{display:none}.page.active{display:block}
 .topline p:empty{display:none}
@@ -212,7 +220,7 @@ footer{margin-top:40px;border-top:1px solid var(--line);padding-top:18px;font-si
       <div class="field"><label for="item-category">Sammlung *</label><select id="item-category" name="category" required></select></div>
       <div class="field"><label for="item-duration">Dauer (optional)</label><input id="item-duration" name="duration" placeholder="z. B. 8 Minuten"></div>
       <div class="field"><label for="item-description">Notiz (optional)</label><textarea id="item-description" name="description" maxlength="500" placeholder="Wann oder wobei hilft mir dieser Inhalt?"></textarea></div>
-      <div class="field"><label for="item-file">Datei auswählen (optional)</label><input id="item-file" name="file" type="file" accept="audio/*,video/*,image/*,.pdf,.txt"></div>
+      <div class="field"><label for="item-file">Datei auswählen (optional)</label><input id="item-file" name="file" type="file" accept="audio/*,.mp3,video/*,image/*,.jpg,.JPG,.jpeg,.JPEG,.png,.PNG,.pdf,.txt"></div>
       <p style="font-size:12px">Tipp: Du kannst zunächst auch nur einen Titel und eine Beschreibung speichern. Die Datei lässt sich später ergänzen, indem du einen neuen Eintrag anlegst.</p>
     </div>
     <div class="form-actions"><button type="button" class="btn secondary" id="cancel-add">Abbrechen</button><button class="btn" type="submit">In Sammlung speichern</button></div>
@@ -388,15 +396,53 @@ function resourceCard(i){
     <div class="tags">${i.needs?`<span class="tag">${escapeHTML(i.needs)}</span>`:""}${i.fileName?`<span class="tag">Datei vorhanden</span>`:""}</div>
     <div class="resource-actions"><button class="btn secondary" data-open="${i.id}">${i.kind==="video"?"Abspielen":"Öffnen"}</button></div></div></article>`;
 }
+function photoCard(i){
+  return `<article class="resource photo-card">
+    <div class="photo-preview-wrap">
+      <img class="photo-preview" data-photo-id="${escapeHTML(i.id)}" alt="${escapeHTML(i.title)}">
+      <button type="button" class="fav" data-fav="${escapeHTML(i.id)}" title="${i.favorite?"Favorit entfernen":"Als Favorit markieren"}" aria-label="${i.favorite?"Favorit entfernen":"Als Favorit markieren"}">${i.favorite?"♥":"♡"}</button>
+      <button type="button" class="photo-delete" data-delete-photo="${escapeHTML(i.id)}" title="Foto löschen" aria-label="Foto löschen">🗑</button>
+      <p class="photo-preview-error" hidden></p>
+    </div>
+    <div class="resource-body"><h3>${escapeHTML(i.title)}</h3><p>${escapeHTML(i.description||"")}</p></div>
+  </article>`;
+}
+function showPhotoPreviewError(image,message){
+  const errorElement=image.closest(".photo-preview-wrap")?.querySelector(".photo-preview-error");
+  if(errorElement){
+    errorElement.textContent=message;
+    errorElement.hidden=false;
+  }
+}
+async function loadPhotoPreviews(){
+  const photos=[...document.querySelectorAll(".photo-preview[data-photo-id]")];
+  await Promise.all(photos.map(async photo=>{
+    photo.addEventListener("error",()=>showPhotoPreviewError(photo,"Das Foto konnte nicht geladen werden."),{once:true});
+    try{
+      const {data,error}=await supabaseClient.functions.invoke("skillkoffer-nextcloud",{
+        body:{itemId:photo.dataset.photoId},
+        headers:{"x-skillkoffer-operation":"media-ticket"}
+      });
+      if(error)throw error;
+      if(!data?.url)throw new Error(data?.error||"Es wurde keine Foto-URL zurückgegeben.");
+      if(photo.isConnected)photo.src=data.url;
+    }catch(error){
+      console.error("Foto-Vorschau konnte nicht geladen werden.",error);
+      if(photo.isConnected)showPhotoPreviewError(photo,"Foto-Vorschau konnte nicht geladen werden. Bitte Verbindung prüfen.");
+    }
+  }));
+}
 function affirmationRow(i){
   const selected=String(affirmationSetting.itemId)===String(i.id);
   return `<article class="affirmation-row">
+        <button type="button" class="affirmation-delete" data-delete-affirmation="${i.id}" title="Affirmation löschen" aria-label="Affirmation löschen">🗑</button>
     <p>${escapeHTML(i.title)}</p>
     <div class="affirmation-actions">
       <button type="button" data-fav="${i.id}" title="${i.favorite?"Favorit entfernen":"Als Favorit markieren"}" aria-label="${i.favorite?"Favorit entfernen":"Als Favorit markieren"}">${i.favorite?"♥":"♡"}</button>
       <button type="button" data-daily="${i.id}" title="Auf dem Dashboard anzeigen" aria-label="${selected?"Auf dem Dashboard ausgewählt":"Auf dem Dashboard anzeigen"}">${selected?"☀":"☼"}</button>
     </div>
   </article>`;
+  
 }
 function emptyMessage(message){return `<div class="empty"><div style="font-size:26px;margin-bottom:8px">☘</div>${escapeHTML(message)}</div>`;}
 function renderItems(){
@@ -420,10 +466,11 @@ function renderItems(){
   const sorted=filtered.sort((a,b)=>b.createdAt-a.createdAt);
   $("library-items").classList.toggle("affirmation-list",activeFilter==="Affirmationen");
   $("library-items").innerHTML=sorted.length
-    ?sorted.map(activeFilter==="Affirmationen"?affirmationRow:resourceCard).join("")
+    ?sorted.map(i=>activeFilter==="Affirmationen"?affirmationRow(i):isPhotoItem(i)?photoCard(i):resourceCard(i)).join("")
     :activeCategory?"":emptyMessage(query||activeFilter!=="Alle"?"Keine passenden Inhalte gefunden.":"Hier ist noch Platz für deine ersten Inhalte. Füge eine Meditation, ein Audio oder eine Übung hinzu.");
   const favs=items.filter(i=>i.favorite&&itemMatches(i,query));
-  $("favorite-items").innerHTML=favs.length?favs.map(resourceCard).join(""):emptyMessage("Du hast noch keine Favoriten markiert. Tippe auf das Herz bei einem Inhalt.");
+  $("favorite-items").innerHTML=favs.length?favs.map(i=>isPhotoItem(i)?photoCard(i):resourceCard(i)).join(""):emptyMessage("Du hast noch keine Favoriten markiert. Tippe auf das Herz bei einem Inhalt.");
+  void loadPhotoPreviews();
   const itemCategories=items.map(i=>i.category).filter(Boolean);
   $("filters").innerHTML=["Alle",...new Set([...categories.map(c=>c.name),...itemCategories]),"audio","video","image","text"].map(f=>`<button class="chip ${activeFilter===f?"active":""}" data-filter="${escapeHTML(f)}">${({audio:"Audio",video:"Video",image:"Bilder",text:"Texte"}[f]||escapeHTML(f))}</button>`).join("");
   $("filters").hidden=Boolean(activeCategory);
@@ -604,6 +651,25 @@ document.addEventListener("click",async e=>{
       affirmationSetting.itemId=daily.dataset.daily;affirmationSetting.startedAt=Date.now();
       await saveAffirmationSetting();await refresh();return;
     }
+    const deleteAffirmation=e.target.closest("[data-delete-affirmation]");
+    if(deleteAffirmation){
+      if(!confirm("Diese Affirmation wirklich löschen?"))return;
+      const id=deleteAffirmation.dataset.deleteAffirmation;
+      await deleteItem(id);
+      if(String(affirmationSetting.itemId)===String(id)){
+        affirmationSetting={...affirmationSetting,itemId:"",startedAt:Date.now()};
+        await saveAffirmationSetting();
+      }
+      await refresh();
+      return;
+    }
+    const deletePhoto=e.target.closest("[data-delete-photo]");
+    if(deletePhoto){
+      if(!confirm("Dieses Foto wirklich löschen?"))return;
+      await deleteItem(deletePhoto.dataset.deletePhoto);
+      await refresh();
+      return;
+    }
     const fav=e.target.closest("[data-fav]");if(fav){await toggleFavorite(fav.dataset.fav);return;}
     const open=e.target.closest("[data-open]");if(open){await openItem(open.dataset.open);return;}
   }catch(err){
@@ -660,7 +726,7 @@ const { data: init, error: initError } =
 itemId: String(itemId).trim(),
         fileSize: file.size,
         fileName: file.name,
-        mimeType: file.type || "application/octet-stream"
+        mimeType: getFileMimeType(file)
       }
     });
 if (initError) {
@@ -735,6 +801,22 @@ if (finishError) {
 
   return finish;
 }
+function isImageFile(file){
+  return Boolean(file&&(file.type.startsWith("image/")||/\.(?:avif|bmp|gif|jpe?g|png|svg|tiff?|webp|heic|heif)$/i.test(file.name)));
+}
+function getFileMimeType(file){
+  if(/\.mp3$/i.test(file.name))return "audio/mpeg";
+  const extension=file.name.split(".").pop().toLowerCase();
+  const inferredType=({
+    avif:"image/avif",bmp:"image/bmp",gif:"image/gif",heic:"image/heic",heif:"image/heif",
+    jpeg:"image/jpeg",jpg:"image/jpeg",mp3:"audio/mpeg",png:"image/png",svg:"image/svg+xml",tif:"image/tiff",
+    tiff:"image/tiff",webp:"image/webp"
+  })[extension];
+  return file.type&&file.type!=="application/octet-stream"?file.type:inferredType||file.type||"application/octet-stream";
+}
+function isPhotoItem(item){
+  return item.kind==="image"||(item.mime_type||"").startsWith("image/")||isImageFile({type:"",name:item.fileName||item.storage_path||item.nextcloud_path||""});
+}
 $("add-form").addEventListener("submit", async e => {
   e.preventDefault();
 
@@ -743,7 +825,7 @@ $("add-form").addEventListener("submit", async e => {
 
   const item = {
     title: $("item-title").value.trim(),
-    kind: $("item-kind").value,
+    kind: file&&isImageFile(file)?"image":file&&(file.type.startsWith("audio/")||/\.mp3$/i.test(file.name))?"audio":$("item-kind").value,
     category: $("item-category").value,
     needs: "",
     duration: $("item-duration").value.trim(),
